@@ -1,4 +1,5 @@
-import { Menu, Bell, Wifi, WifiOff, User } from 'lucide-react';
+import { Menu, Bell, Wifi, WifiOff, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useDeviceStatus } from '@/hooks/useDeviceStatus';
 
 interface TopNavProps {
@@ -21,7 +22,7 @@ export default function TopNav({ onMenuClick, title }: TopNavProps) {
       <h2 className="text-lg font-semibold text-foreground hidden sm:block">{title}</h2>
 
       <div className="ml-auto flex items-center gap-3">
-        {/* Connection status */}
+        {/* Status Koneksi */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-xs">
           {device.esp32Connected ? (
             <>
@@ -38,16 +39,21 @@ export default function TopNav({ onMenuClick, title }: TopNavProps) {
           )}
         </div>
 
-        {/* Notifications */}
+        {/* Notifikasi */}
         <button className="relative p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
           <Bell className="w-5 h-5" />
           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
         </button>
 
-        {/* User */}
-        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-          <User className="w-4 h-4 text-primary-foreground" />
-        </div>
+        {/* Tombol Settings (Ganti User) */}
+        <Link 
+          to="/settings" 
+          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg" 
+          style={{ background: 'var(--gradient-primary)' }}
+          title="Pengaturan"
+        >
+          <Settings className="w-4 h-4 text-primary-foreground" />
+        </Link>
       </div>
     </header>
   );

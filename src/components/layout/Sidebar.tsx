@@ -4,7 +4,7 @@ import {
   Utensils, 
   Waves, 
   Cpu, 
-  Settings, 
+  // Settings, 
   Fish,
   X
 } from 'lucide-react';
@@ -14,7 +14,7 @@ const navItems = [
   { to: '/feeding', icon: Utensils, label: 'Feeding Control' },
   { to: '/monitoring', icon: Waves, label: 'Water Monitoring' },
   { to: '/device', icon: Cpu, label: 'Device Status' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  // { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 interface SidebarProps {
