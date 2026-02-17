@@ -2,9 +2,9 @@ import { useSensorData, getSensorStatus } from '@/hooks/useSensorData';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const chartConfig = [
-  { key: 'temperature', label: 'Temperature (°C)', color: 'hsl(185, 72%, 48%)', range: '25–30°C' },
-  { key: 'ph', label: 'pH Level', color: 'hsl(210, 90%, 55%)', range: '6.5–8.0' },
-  { key: 'ammonia', label: 'Ammonia (ppm)', color: 'hsl(155, 72%, 45%)', range: '< 0.02 ppm' },
+  { key: 'temperature', label: 'Suhu Air (°C)', color: 'hsl(185, 72%, 48%)', range: '25–30°C' },
+  { key: 'ph', label: 'pH Air', color: 'hsl(210, 90%, 55%)', range: '6.5–8.0' },
+  { key: 'ammonia', label: 'Kadar Ammonia (ppm)', color: 'hsl(155, 72%, 45%)', range: '< 0.02 ppm' },
 ];
 
 const statusColors = {
@@ -17,16 +17,16 @@ export default function WaterMonitoring() {
   const { data, history } = useSensorData(2000);
 
   const currentValues = [
-    { type: 'temperature', value: data.temperature, unit: '°C' },
-    { type: 'ph', value: data.ph, unit: '' },
-    { type: 'ammonia', value: data.ammonia, unit: ' ppm' },
+    { type: 'Suhu Air', value: data.temperature, unit: '°C' },
+    { type: 'pH Air', value: data.ph, unit: '' },
+    { type: 'Kadar Ammonia', value: data.ammonia, unit: ' ppm' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="fade-up">
-        <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Water Quality Monitoring</h1>
-        <p className="text-sm text-muted-foreground mt-1">Live charts and status indicators</p>
+        <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Monitoring Kualitas Air</h1>
+        <p className="text-sm text-muted-foreground mt-1">Grafik dan Statu Terkini</p>
       </div>
 
       {/* Status indicators */}

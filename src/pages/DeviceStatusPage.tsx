@@ -1,11 +1,12 @@
 import { Wifi, WifiOff, Cpu, Battery, Clock, Signal, Gauge } from 'lucide-react';
 import { useDeviceStatus } from '@/hooks/useDeviceStatus';
 
+// Fungsi untuk memformat waktu aktif perangkat
 function formatUptime(seconds: number) {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return `${d}d ${h}h ${m}m`;
+  return `${d}hari ${h}jam ${m}menit`;
 }
 
 export default function DeviceStatusPage() {
@@ -13,74 +14,65 @@ export default function DeviceStatusPage() {
 
   const items = [
     {
-      label: 'ESP32 Connection',
-      value: device.esp32Connected ? 'Connected' : 'Disconnected',
+      label: 'Koneksi ESP32',
+      value: device.esp32Connected ? 'Terhubung' : 'Terputus',
       icon: Cpu,
       status: device.esp32Connected,
       detail: 'ESP32-WROOM-32D',
     },
     {
-      label: 'WiFi Status',
-      value: device.wifiConnected ? device.wifiSSID : 'Not Connected',
+      label: 'Status WiFi',
+      value: device.wifiConnected ? device.wifiSSID : 'Tidak Terhubung',
       icon: device.wifiConnected ? Wifi : WifiOff,
       status: device.wifiConnected,
-      detail: device.wifiConnected ? 'Signal: Strong' : 'Check router',
+      detail: device.wifiConnected ? 'Sinyal: Kuat' : 'Periksa router',
     },
     {
-      label: 'Last Data Received',
-      value: device.lastDataReceived.toLocaleTimeString(),
+      label: 'Data Terakhir Diterima',
+      value: device.lastDataReceived.toLocaleTimeString('id-ID'),
       icon: Clock,
       status: true,
-      detail: 'Data streaming active',
+      detail: 'Aliran data aktif',
     },
     {
-      label: 'Battery Level',
+      label: 'Level Baterai',
       value: `${device.batteryLevel}%`,
       icon: Battery,
       status: device.batteryLevel > 20,
-      detail: device.batteryLevel > 50 ? 'Healthy' : device.batteryLevel > 20 ? 'Low' : 'Critical',
+      detail: device.batteryLevel > 20 ? 'Daya mencukupi' : 'Segera isi daya',
     },
     {
-      label: 'Device Uptime',
+      label: 'Waktu Aktif Sistem',
       value: formatUptime(device.uptime),
-      icon: Gauge,
-      status: true,
-      detail: 'Running continuously',
-    },
-    {
-      label: 'Firmware',
-      value: device.firmwareVersion,
       icon: Signal,
       status: true,
-      detail: 'Up to date',
+      detail: 'Berjalan tanpa gangguan',
+    },
+    {
+      label: 'Beban Memori',
+      value: `${device.memoryUsage}%`,
+      icon: Gauge,
+      status: device.memoryUsage < 80,
+      detail: 'Optimasi sistem baik',
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="fade-up">
-        <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Device Status</h1>
-        <p className="text-sm text-muted-foreground mt-1">ESP32 microcontroller and connectivity status</p>
-      </div>
-
-      {/* Main status indicator */}
-      <div className="glass-card rounded-xl p-6 flex items-center gap-4 fade-up fade-up-delay-1">
-        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${device.esp32Connected ? 'bg-success/10' : 'bg-destructive/10'}`}>
-          <Cpu className={`w-8 h-8 ${device.esp32Connected ? 'text-success' : 'text-destructive'}`} />
-        </div>
+      {/* Header Halaman */}
+      <div className="fade-up flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-foreground">
-            System {device.esp32Connected ? 'Online' : 'Offline'}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {device.esp32Connected ? 'All systems operational' : 'Connection lost — check hardware'}
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Status Perangkat</h1>
+          <p className="text-sm text-muted-foreground mt-1">Informasi teknis sistem AquaFeedX Anda</p>
         </div>
-        <div className="ml-auto">
-          <span className={`w-4 h-4 rounded-full inline-block ${device.esp32Connected ? 'bg-success' : 'bg-destructive'} status-pulse`} />
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sistem:</span>
+          <span className="text-xs font-bold text-success uppercase">Stabil</span>
+          <span className={`w-2 h-2 rounded-full bg-success animate-pulse`} />
         </div>
       </div>
 
+      {/* Grid Informasi Perangkat */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item, i) => {
           const Icon = item.icon;
@@ -90,24 +82,25 @@ export default function DeviceStatusPage() {
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Icon className="w-5 h-5 text-primary" />
                 </div>
-                <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} status-pulse`} />
+                <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
               </div>
-              <p className="text-xs text-muted-foreground mb-1">{item.label}</p>
+              <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold tracking-tighter">{item.label}</p>
               <p className="text-lg font-bold font-mono text-foreground">{item.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{item.detail}</p>
+              <p className="text-[10px] text-muted-foreground mt-1 italic opacity-70">{item.detail}</p>
             </div>
           );
         })}
       </div>
 
-      {/* ESP32 Integration note */}
-      <div className="glass-card rounded-xl p-4 border-l-4 border-primary fade-up fade-up-delay-5">
-        <p className="text-sm font-medium text-foreground">🔧 Ready for ESP32 Integration</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          This dashboard supports Firebase, MQTT, WebSocket, and REST API connections. 
-          Replace simulated data with real sensor readings from your ESP32 device.
+      {/* Catatan Integrasi ESP32 */}
+      {/* <div className="glass-card rounded-xl p-4 border-l-4 border-primary fade-up fade-up-delay-5 bg-primary/5">
+        <p className="text-sm font-bold text-foreground flex items-center gap-2">
+          <span>🔧</span> Siap untuk Integrasi ESP32
         </p>
-      </div>
+        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+          Sistem saat ini menggunakan data simulasi untuk keperluan demo UI. Hubungkan ESP32 Anda ke endpoint API lokal untuk melihat performa perangkat yang sebenarnya secara real-time.
+        </p>
+      </div> */}
     </div>
   );
 }

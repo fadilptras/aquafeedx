@@ -11,9 +11,9 @@ import {
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/feeding', icon: Utensils, label: 'Feeding Control' },
-  { to: '/monitoring', icon: Waves, label: 'Water Monitoring' },
-  { to: '/device', icon: Cpu, label: 'Device Status' },
+  { to: '/feeding', icon: Utensils, label: 'Pakan Ikan Otomatis' },
+  { to: '/monitoring', icon: Waves, label: 'Monitoring Air' },
+  { to: '/device', icon: Cpu, label: 'Status Alat' },
   // { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -88,7 +88,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         {/* Footer */}
         <div className="px-4 py-4 border-t border-border">
           <div className="glass-card rounded-lg p-3 text-center">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">System Version</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Versi Sistem</p>
             <p className="text-xs font-mono text-primary mt-1">v2.1.4-beta</p>
           </div>
         </div>
