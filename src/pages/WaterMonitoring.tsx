@@ -4,7 +4,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const chartConfig = [
   { key: 'temperature', label: 'Suhu Air (°C)', color: 'hsl(185, 72%, 48%)', range: '25–30°C' },
   { key: 'ph', label: 'pH Air', color: 'hsl(210, 90%, 55%)', range: '6.5–8.0' },
-  { key: 'ammonia', label: 'Kadar Ammonia (ppm)', color: 'hsl(155, 72%, 45%)', range: '< 0.02 ppm' },
 ];
 
 const statusColors = {
@@ -19,7 +18,6 @@ export default function WaterMonitoring() {
   const currentValues = [
     { type: 'Suhu Air', value: data.temperature, unit: '°C' },
     { type: 'pH Air', value: data.ph, unit: '' },
-    { type: 'Kadar Ammonia', value: data.ammonia, unit: ' ppm' },
   ];
 
   return (
@@ -30,7 +28,7 @@ export default function WaterMonitoring() {
       </div>
 
       {/* Status indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 fade-up fade-up-delay-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 fade-up fade-up-delay-1">
         {currentValues.map(item => {
           const status = getSensorStatus(item.type, item.value);
           return (

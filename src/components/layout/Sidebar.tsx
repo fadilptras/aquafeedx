@@ -3,8 +3,7 @@ import {
   LayoutDashboard, 
   Utensils, 
   Waves, 
-  Cpu, 
-  // Settings, 
+  Cpu,  
   Fish,
   X
 } from 'lucide-react';
@@ -14,7 +13,6 @@ const navItems = [
   { to: '/feeding', icon: Utensils, label: 'Pakan Ikan Otomatis' },
   { to: '/monitoring', icon: Waves, label: 'Monitoring Air' },
   { to: '/device', icon: Cpu, label: 'Status Alat' },
-  // { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 interface SidebarProps {

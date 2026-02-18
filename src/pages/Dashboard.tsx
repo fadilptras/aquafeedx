@@ -45,20 +45,6 @@ export default function Dashboard() {
       range: '6.5–8.0 optimal',
     },
     {
-      label: 'Kadar Ammonia',
-      value: `${data.ammonia.toFixed(3)} ppm`,
-      icon: FlaskConical,
-      status: getSensorStatus('ammonia', data.ammonia),
-      range: '< 0.02 ppm',
-    },
-    {
-      label: 'Kekeruhan Air',
-      value: `${data.turbidity} NTU`,
-      icon: Eye,
-      status: getSensorStatus('turbidity', data.turbidity),
-      range: '< 30 NTU',
-    },
-    {
       label: 'Status Pakan',
       value: data.feedingStatus ? 'Aktif' : 'Standby',
       icon: Utensils,
