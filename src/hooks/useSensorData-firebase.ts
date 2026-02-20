@@ -10,6 +10,7 @@ export interface SensorData {
 
 export type SensorStatus = 'good' | 'warning' | 'danger';
 
+// Fungsi ini tetap dipertahankan untuk logika warna di Dashboard
 export function getSensorStatus(type: string, value: number): SensorStatus {
   switch (type) {
     case 'temperature':
@@ -25,6 +26,9 @@ export function getSensorStatus(type: string, value: number): SensorStatus {
   }
 }
 
+// GANTI dengan URL Realtime Database Anda sendiri
+const FIREBASE_URL = "https://proyek-anda-default-rtdb.firebaseio.com/sensor.json";
+
 export function useSensorData(updateInterval = 3000) {
   const [data, setData] = useState<SensorData>({
     temperature: 0,
@@ -34,27 +38,39 @@ export function useSensorData(updateInterval = 3000) {
     nextFeedingCountdown: 0,
   });
 
+  // History tetap dipertahankan untuk grafik jika diperlukan
   const [history, setHistory] = useState<{ time: string; temperature: number; ph: number }[]>([]);
 
   const updateData = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/sensor");
-      const jsonData: SensorData = await response.json();
+      const response = await fetch(FIREBASE_URL);
+      const jsonData = await response.json();
       
-      setData(jsonData);
-
-      setHistory(prev => {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString();
-        const newEntry = {
-          time: timeStr,
-          temperature: jsonData.temperature,
-          ph: jsonData.ph,
+      if (jsonData) {
+        const newData = {
+          temperature: jsonData.temperature || 0,
+          ph: jsonData.ph || 0,
+          feedingStatus: jsonData.feedingStatus || false,
+          nextFeedingTime: jsonData.nextFeedingTime || "-",
+          nextFeedingCountdown: jsonData.nextFeedingCountdown || 0,
         };
-        return [...prev, newEntry].slice(-30);
-      });
+
+        setData(newData);
+
+        // Menambahkan data ke history secara lokal setiap kali fetch berhasil
+        setHistory(prev => {
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString();
+          const newEntry = {
+            time: timeStr,
+            temperature: newData.temperature,
+            ph: newData.ph,
+          };
+          return [...prev, newEntry].slice(-30); // Simpan 30 data terakhir
+        });
+      }
     } catch (error) {
-      console.error("Gagal fetch data sensor:", error);
+      console.error("Gagal mengambil data dari Firebase:", error);
     }
   }, []);
 

@@ -1,155 +1,112 @@
-import { useState } from 'react';
-import { Utensils, Save, Zap, Clock, ToggleLeft, ToggleRight, Check } from 'lucide-react';
+import { Clock, Save, Trash2, Plus, Check, Utensils, Loader2 } from 'lucide-react';
 import { useFeedingSettings } from '@/hooks/useFeedingSettings';
 
 export default function FeedingControl() {
-  const { settings, updateSettings, saveSettings, feedNow, lastSaved } = useFeedingSettings();
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [feedTriggered, setFeedTriggered] = useState(false);
+  const { settings, updateSettings, saveSettings, showSuccess, isLoading } = useFeedingSettings();
 
-  const handleSave = () => {
-    saveSettings();
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+  const addTime = () => {
+    updateSettings({ times: [...settings.times, "08:00"] });
   };
 
-  const handleFeedNow = () => {
-    feedNow();
-    setFeedTriggered(true);
-    setTimeout(() => setFeedTriggered(false), 2000);
+  const removeTime = (index: number) => {
+    const newTimes = settings.times.filter((_, i) => i !== index);
+    updateSettings({ times: newTimes });
   };
 
-  const frequencyOptions = [1, 2, 3, 4, 5];
+  const handleTimeChange = (index: number, value: string) => {
+    const newTimes = [...settings.times];
+    newTimes[index] = value;
+    updateSettings({ times: newTimes });
+  };
+
+  // Tampilkan loading screen saat pertama kali buka halaman
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+        <p className="text-sm text-muted-foreground">Menyinkronkan jadwal...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Success notification */}
+    <div className="space-y-6">
       {showSuccess && (
         <div className="fixed top-4 right-4 z-50 glass-card rounded-xl p-4 flex items-center gap-3 border border-success/30 animate-fade-up">
           <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
             <Check className="w-4 h-4 text-success" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Settings Saved!</p>
-            <p className="text-xs text-muted-foreground">Configuration updated successfully</p>
+            <p className="text-sm font-medium text-foreground">Berhasil Disimpan!</p>
+            <p className="text-xs text-muted-foreground">Jadwal telah sinkron ke database</p>
           </div>
         </div>
       )}
 
       <div className="fade-up">
-        <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Feeding Control</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage your automated feeding schedule</p>
+        <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Kontrol Pakan</h1>
+        <p className="text-sm text-muted-foreground mt-1">Kelola waktu pemberian pakan otomatis</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Frequency */}
-        <div className="glass-card rounded-xl p-5 fade-up fade-up-delay-1">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Feeding Frequency</h3>
+      <div className="glass-card rounded-2xl p-6 fade-up fade-up-delay-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Clock className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-lg">Jadwal Jam Pakan</h3>
+              <p className="text-xs text-muted-foreground text-balance">Data di bawah ini adalah data yang saat ini aktif di sistem ESP32</p>
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {frequencyOptions.map(f => (
-              <button
-                key={f}
-                onClick={() => updateSettings({ frequency: f })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ripple-btn ${
-                  settings.frequency === f 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                }`}
-              >
-                {f}x / day
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Feeding Times */}
-        <div className="glass-card rounded-xl p-5 fade-up fade-up-delay-2">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Feeding Times</h3>
-          </div>
-          <div className="space-y-2">
-            {Array.from({ length: settings.frequency }, (_, i) => (
-              <input
-                key={i}
-                type="time"
-                value={settings.times[i] || '08:00'}
-                onChange={e => {
-                  const newTimes = [...settings.times];
-                  newTimes[i] = e.target.value;
-                  updateSettings({ times: newTimes });
-                }}
-                className="w-full px-4 py-2.5 rounded-lg bg-secondary text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors font-mono text-sm"
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Dose */}
-        <div className="glass-card rounded-xl p-5 fade-up fade-up-delay-3">
-          <div className="flex items-center gap-2 mb-4">
-            <Utensils className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Feed Dose</h3>
-          </div>
-          <input
-            type="range"
-            min={10}
-            max={200}
-            step={5}
-            value={settings.doseGrams}
-            onChange={e => updateSettings({ doseGrams: Number(e.target.value) })}
-            className="w-full accent-primary h-2 rounded-full appearance-none bg-secondary cursor-pointer"
-            style={{ accentColor: 'hsl(185 72% 48%)' }}
-          />
-          <div className="flex justify-between mt-2">
-            <span className="text-xs text-muted-foreground">10g</span>
-            <span className="text-lg font-bold font-mono text-primary">{settings.doseGrams}g</span>
-            <span className="text-xs text-muted-foreground">200g</span>
-          </div>
-        </div>
-
-        {/* Auto Toggle */}
-        <div className="glass-card rounded-xl p-5 fade-up fade-up-delay-4">
-          <div className="flex items-center gap-2 mb-4">
-            {settings.autoFeeding ? (
-              <ToggleRight className="w-5 h-5 text-success" />
-            ) : (
-              <ToggleLeft className="w-5 h-5 text-muted-foreground" />
-            )}
-            <h3 className="font-semibold text-foreground">Auto-Feeding</h3>
-          </div>
-          <button
-            onClick={() => updateSettings({ autoFeeding: !settings.autoFeeding })}
-            className={`w-full py-3 rounded-lg text-sm font-semibold transition-all ripple-btn ${
-              settings.autoFeeding 
-                ? 'bg-success/20 text-success border border-success/30' 
-                : 'bg-secondary text-muted-foreground border border-border'
-            }`}
+          <button 
+            onClick={addTime}
+            className="flex items-center justify-center gap-2 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground px-5 py-2.5 rounded-xl transition-all border border-border"
           >
-            {settings.autoFeeding ? '✓ Auto-Feeding Enabled' : 'Auto-Feeding Disabled'}
+            <Plus className="w-4 h-4" /> Tambah Waktu
           </button>
         </div>
+
+        <div className="space-y-4">
+          {settings.times.length === 0 ? (
+            <div className="text-center py-16 border-2 border-dashed border-border rounded-2xl bg-secondary/10">
+              <Utensils className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">Belum ada jadwal yang tersimpan</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {settings.times.map((time, index) => (
+                <div key={index} className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/40 border border-border/50 hover:border-primary/40 transition-all">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary text-xs font-black">
+                    {index + 1}
+                  </div>
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => handleTimeChange(index, e.target.value)}
+                    className="flex-1 bg-transparent text-foreground outline-none font-mono text-lg font-bold focus:text-primary transition-colors"
+                  />
+                  <button 
+                    onClick={() => removeTime(index)}
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 fade-up fade-up-delay-5">
+      <div className="fade-up fade-up-delay-2">
         <button
-          onClick={handleFeedNow}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all ripple-btn glow-hover text-primary-foreground"
+          onClick={saveSettings}
+          className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-sm transition-all ripple-btn glow-hover text-primary-foreground shadow-xl shadow-primary/20 uppercase tracking-widest"
           style={{ background: 'var(--gradient-primary)' }}
         >
-          <Zap className="w-4 h-4" />
-          {feedTriggered ? 'Feeding...' : 'Feed Now'}
-        </button>
-        <button
-          onClick={handleSave}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-foreground font-semibold text-sm hover:bg-secondary/80 transition-all ripple-btn"
-        >
-          <Save className="w-4 h-4" />
-          Save Settings
+          <Save className="w-5 h-5" />
+          Simpan & Perbarui Jadwal
         </button>
       </div>
     </div>
