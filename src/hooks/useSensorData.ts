@@ -10,19 +10,23 @@ export interface SensorData {
 
 export type SensorStatus = 'good' | 'warning' | 'danger';
 
-export function getSensorStatus(type: string, value: number): SensorStatus {
-  switch (type) {
-    case 'temperature':
-      if (value >= 25 && value <= 30) return 'good';
-      if ((value >= 22 && value < 25) || (value > 30 && value <= 33)) return 'warning';
-      return 'danger';
-    case 'ph':
-      if (value >= 6.5 && value <= 8.0) return 'good';
-      if ((value >= 6.0 && value < 6.5) || (value > 8.0 && value <= 8.5)) return 'warning';
-      return 'danger';
-    default:
-      return 'good';
-  }
+export function getSensorStatus(type: string, value: number, min: number, max: number): SensorStatus {
+  // Fallback jika API settings belum termuat
+  if (min === 0 && max === 0) return 'good';
+
+  // Tentukan jarak toleransi untuk peringatan sebelum masuk kategori bahaya
+  let tolerance = 0;
+  if (type === 'temperature') tolerance = 3; // Peringatan jika selisih 3 derajat dari batas
+  if (type === 'ph') tolerance = 0.5; // Peringatan jika selisih 0.5 dari batas
+
+  // Jika nilai ada di dalam batas minimum & maksimum -> Aman
+  if (value >= min && value <= max) return 'good';
+  
+  // Jika nilai di luar batas, tapi masih masuk dalam jarak toleransi -> Peringatan
+  if ((value >= min - tolerance && value < min) || (value > max && value <= max + tolerance)) return 'warning';
+  
+  // Jika sudah melampaui batas dan toleransi -> Bahaya
+  return 'danger';
 }
 
 export function useSensorData(updateInterval = 3000) {

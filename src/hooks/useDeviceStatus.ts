@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 
 export interface DeviceInfo {
   esp32Connected: boolean;
+  powerConnected: boolean;
   wifiConnected: boolean;
   wifiSSID: string;
   lastDataReceived: Date;
-  batteryLevel: number;
   firmwareVersion: string;
   uptime: number; // seconds
 }
@@ -15,10 +15,10 @@ export interface DeviceInfo {
 export function useDeviceStatus() {
   const [device, setDevice] = useState<DeviceInfo>({
     esp32Connected: true,
+    powerConnected: true,
     wifiConnected: true,
     wifiSSID: 'AquaFeedX_Network',
     lastDataReceived: new Date(),
-    batteryLevel: 87,
     firmwareVersion: 'v2.1.4',
     uptime: 86400,
   });
@@ -28,9 +28,9 @@ export function useDeviceStatus() {
       setDevice(prev => ({
         ...prev,
         lastDataReceived: new Date(),
-        batteryLevel: Math.max(10, Math.min(100, prev.batteryLevel + (Math.random() > 0.5 ? -1 : 0))),
         uptime: prev.uptime + 5,
         esp32Connected: Math.random() > 0.05,
+        powerConnected: Math.random() > 0.02,
         wifiConnected: Math.random() > 0.03,
       }));
     }, 5000);

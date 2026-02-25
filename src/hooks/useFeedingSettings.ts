@@ -1,30 +1,24 @@
 import { useState, useEffect } from 'react';
 
-export interface FeedingSettings {
-  times: string[];
+export interface ScheduleItem {
+  id?: number;
+  name?: string;
+  time: string;
+  isActive?: boolean;
 }
 
 export function useFeedingSettings() {
-  const [settings, setSettings] = useState<FeedingSettings>({
-    times: [] 
-  });
+  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // data terbaru dr database
+  // db
   const fetchSchedules = async () => {
     try {
       const response = await fetch("http://localhost:3000/api/schedules");
       if (response.ok) {
         const data = await response.json();
-        
-        // Ambil indeks [0] karena backend mengirim data terbaru di urutan pertama (desc)
-        if (data && data.length > 0) {
-          const latestSchedule = data[0]; // Ganti dari data[data.length - 1] menjadi data[0]
-          setSettings({ 
-            times: latestSchedule.time || [] 
-          });
-        }
+        setSchedules(data || []);
       }
     } catch (error) {
       console.error("Gagal mengambil jadwal dari database:", error);
@@ -33,27 +27,43 @@ export function useFeedingSettings() {
     }
   };
 
-  // Ambil data saat komponen pertama kali dimuat (mencegah reset saat refresh)
+  // Ambil data saat komponen pertama kali dimuat
   useEffect(() => {
     fetchSchedules();
   }, []);
 
-  const updateSettings = (partial: Partial<FeedingSettings>) => {
-    setSettings(prev => ({ ...prev, ...partial }));
+  const addTime = () => {
+    setSchedules(prev => [...prev, { time: "08:00" }]);
+  };
+
+  const removeTime = (index: number) => {
+    setSchedules(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTimeChange = (index: number, value: string) => {
+    setSchedules(prev => {
+      const newSchedules = [...prev];
+      newSchedules[index].time = value;
+      return newSchedules;
+    });
   };
 
   const saveSettings = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/schedules", {
+      // Format data array of objects untuk dikirim ke endpoint sync
+      const payload = schedules.map(s => ({
+        name: "Jadwal Pakan Aktif",
+        time: s.time,
+        isActive: true
+      }));
+
+      // Kirim ke endpoint sync yang akan menghapus data lama dan mereplace dengan data baru ini
+      const response = await fetch("http://localhost:3000/api/schedules/sync", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json" 
         },
-        body: JSON.stringify({
-          name: "Jadwal Pakan Aktif",
-          time: settings.times, // Mengirim array string
-          isActive: true
-        })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
@@ -74,8 +84,10 @@ export function useFeedingSettings() {
   };
 
   return { 
-    settings, 
-    updateSettings, 
+    schedules, 
+    addTime, 
+    removeTime, 
+    handleTimeChange, 
     saveSettings, 
     showSuccess, 
     isLoading 

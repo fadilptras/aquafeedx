@@ -1,4 +1,4 @@
-import { Wifi, WifiOff, Cpu, Battery, Clock, Signal, Gauge } from 'lucide-react';
+import { Wifi, WifiOff, Cpu, Zap, Clock, Signal } from 'lucide-react';
 import { useDeviceStatus } from '@/hooks/useDeviceStatus';
 
 // Fungsi untuk memformat waktu aktif perangkat
@@ -12,7 +12,8 @@ function formatUptime(seconds: number) {
 export default function DeviceStatusPage() {
   const device = useDeviceStatus();
 
-  const items = [
+  // Baris pertama: 3 Kolom
+  const row1Items = [
     {
       label: 'Koneksi ESP32',
       value: device.esp32Connected ? 'Terhubung' : 'Terputus',
@@ -21,26 +22,23 @@ export default function DeviceStatusPage() {
       detail: 'ESP32-WROOM-32D',
     },
     {
+      label: 'Koneksi Listrik',
+      value: device.powerConnected ? 'Terhubung' : 'Terputus',
+      icon: Zap,
+      status: device.powerConnected,
+      detail: device.powerConnected ? 'Catu daya stabil' : 'Cek adaptor listrik',
+    },
+    {
       label: 'Status WiFi',
       value: device.wifiConnected ? device.wifiSSID : 'Tidak Terhubung',
       icon: device.wifiConnected ? Wifi : WifiOff,
       status: device.wifiConnected,
       detail: device.wifiConnected ? 'Sinyal: Kuat' : 'Periksa router',
     },
-    {
-      label: 'Data Terakhir Diterima',
-      value: device.lastDataReceived.toLocaleTimeString('id-ID'),
-      icon: Clock,
-      status: true,
-      detail: 'Aliran data aktif',
-    },
-    {
-      label: 'Level Baterai',
-      value: `${device.batteryLevel}%`,
-      icon: Battery,
-      status: device.batteryLevel > 20,
-      detail: device.batteryLevel > 20 ? 'Daya mencukupi' : 'Segera isi daya',
-    },
+  ];
+
+  // Baris kedua: 2 Kolom
+  const row2Items = [
     {
       label: 'Waktu Aktif Sistem',
       value: formatUptime(device.uptime),
@@ -49,11 +47,11 @@ export default function DeviceStatusPage() {
       detail: 'Berjalan tanpa gangguan',
     },
     {
-      label: 'Beban Memori',
-      value: `${device.memoryUsage}%`,
-      icon: Gauge,
-      status: device.memoryUsage < 80,
-      detail: 'Optimasi sistem baik',
+      label: 'Data Terakhir Diterima',
+      value: device.lastDataReceived.toLocaleTimeString('id-ID'),
+      icon: Clock,
+      status: true,
+      detail: 'Aliran data aktif',
     },
   ];
 
@@ -72,24 +70,47 @@ export default function DeviceStatusPage() {
         </div>
       </div>
 
-      {/* Grid Informasi Perangkat */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((item, i) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label} className={`glass-card rounded-xl p-5 fade-up fade-up-delay-${Math.min(i + 2, 5)}`}>
-              <div className="flex items-start justify-between mb-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Icon className="w-5 h-5 text-primary" />
+      {/* Container Grid */}
+      <div className="space-y-4">
+        {/* Baris Pertama: Grid 3 Kolom */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {row1Items.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className={`glass-card rounded-xl p-5 fade-up fade-up-delay-${Math.min(i + 1, 5)}`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
                 </div>
-                <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
+                <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold tracking-tighter">{item.label}</p>
+                <p className="text-lg font-bold font-mono text-foreground">{item.value}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 italic opacity-70">{item.detail}</p>
               </div>
-              <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold tracking-tighter">{item.label}</p>
-              <p className="text-lg font-bold font-mono text-foreground">{item.value}</p>
-              <p className="text-[10px] text-muted-foreground mt-1 italic opacity-70">{item.detail}</p>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+        {/* Baris Kedua: Grid 2 Kolom */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {row2Items.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className={`glass-card rounded-xl p-5 fade-up fade-up-delay-${Math.min(i + 4, 5)}`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
+                </div>
+                <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold tracking-tighter">{item.label}</p>
+                <p className="text-lg font-bold font-mono text-foreground">{item.value}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 italic opacity-70">{item.detail}</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Catatan Integrasi ESP32 */}

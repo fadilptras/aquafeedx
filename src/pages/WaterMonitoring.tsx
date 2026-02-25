@@ -1,4 +1,5 @@
 import { useSensorData, getSensorStatus } from "@/hooks/useSensorData";
+import { useSettings } from "@/hooks/useSettings";
 import {
   LineChart,
   Line,
@@ -9,16 +10,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const chartConfig = [
-  {
-    key: "temperature",
-    label: "Suhu Air (°C)",
-    color: "hsl(185, 72%, 48%)",
-    range: "25–30°C",
-  },
-  { key: "ph", label: "pH Air", color: "hsl(210, 90%, 55%)", range: "6.5–8.0" },
-];
-
 const statusColors = {
   good: "bg-success text-success",
   warning: "bg-warning text-warning",
@@ -27,10 +18,27 @@ const statusColors = {
 
 export default function WaterMonitoring() {
   const { data, history } = useSensorData(2000);
+  const { config } = useSettings(); // Memanggil batas optimal dari settings
+
+  // Memasukkan array ini ke dalam komponen agar bisa membaca config secara reaktif
+  const chartConfig = [
+    {
+      key: "temperature",
+      label: "Suhu Air (°C)",
+      color: "hsl(185, 72%, 48%)",
+      range: `${config.tempMin}–${config.tempMax}°C`,
+    },
+    { 
+      key: "ph", 
+      label: "pH Air", 
+      color: "hsl(210, 90%, 55%)", 
+      range: `${config.phMin}–${config.phMax}` 
+    },
+  ];
 
   const currentValues = [
-    { type: "Suhu Air", value: data.temperature, unit: "°C" },
-    { type: "pH Air", value: data.ph, unit: "" },
+    { type: "temperature", label: "Suhu Air", value: data.temperature, unit: "°C", min: config.tempMin, max: config.tempMax },
+    { type: "ph", label: "pH Air", value: data.ph, unit: "", min: config.phMin, max: config.phMax },
   ];
 
   return (
@@ -40,14 +48,15 @@ export default function WaterMonitoring() {
           Monitoring Kualitas Air
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Grafik dan Statu Terkini
+          Grafik dan Status Terkini
         </p>
       </div>
 
       {/* Status indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 fade-up fade-up-delay-1">
         {currentValues.map((item) => {
-          const status = getSensorStatus(item.type, item.value);
+          // Fungsi getSensorStatus kini dipanggil dengan membawa batas min dan max-nya
+          const status = getSensorStatus(item.type, item.value, Number(item.min), Number(item.max));
           return (
             <div
               key={item.type}
@@ -55,17 +64,11 @@ export default function WaterMonitoring() {
             >
               <div>
                 <p className="text-xs text-muted-foreground capitalize">
-                  {item.type}
+                  {item.label}
                 </p>
                 <p className="text-xl font-bold font-mono text-foreground">
                   {typeof item.value === "number"
-                    ? item.value.toFixed(
-                        item.type === "ammonia"
-                          ? 3
-                          : item.type === "ph"
-                            ? 2
-                            : 1,
-                      )
+                    ? item.value.toFixed(item.type === "ph" ? 2 : 1)
                     : item.value}
                   {item.unit}
                 </p>
@@ -100,7 +103,7 @@ export default function WaterMonitoring() {
               <div>
                 <h3 className="font-semibold text-foreground">{chart.label}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Optimal range: {chart.range}
+                  Rentang optimal: {chart.range}
                 </p>
               </div>
             </div>
