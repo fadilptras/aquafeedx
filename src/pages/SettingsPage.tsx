@@ -41,7 +41,7 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         
-        {/* Kiri */}
+        {/* Kiri - Identitas */}
         <div className="glass-card h-full rounded-xl p-6 flex flex-col space-y-5 fade-up fade-up-delay-1 border border-border/50">
           <div className="flex items-center gap-2 mb-4 border-b border-border/50 pb-3">
             <Settings2 className="w-5 h-5 text-primary" />
@@ -137,22 +137,22 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Kanan */}
+        {/* Kanan - Kalibrasi */}
         <div className="glass-card h-full rounded-xl p-6 flex flex-col space-y-5 fade-up fade-up-delay-2 border border-border/50">
           <div className="flex items-center gap-2 mb-2 border-b border-border/50 pb-3">
             <Droplets className="w-5 h-5 text-primary" />
-            <h3 className="font-bold text-foreground">Ambang Batas Kualitas Air</h3>
+            <h3 className="font-bold text-foreground">Batas Kualitas & Kalibrasi Alat</h3>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            Sistem akan memberikan tanda bahaya di dashboard jika sensor membaca nilai di luar batas toleransi yang Anda tentukan di bawah ini.
+            Atur batas toleransi sensor pH air, penyesuaian kalibrasi digital, dan durasi nyala motor pakan otomatis.
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
             {[
-              { label: 'Suhu Minimum (°C)', key: 'tempMin' as const, desc: 'Batas dingin air' },
-              { label: 'Suhu Maksimum (°C)', key: 'tempMax' as const, desc: 'Batas panas air' },
               { label: 'pH Minimum', key: 'phMin' as const, desc: 'Batas asam air' },
               { label: 'pH Maksimum', key: 'phMax' as const, desc: 'Batas basa air' },
+              { label: 'Durasi Pakan (Detik)', key: 'feedDuration' as const, desc: 'Lama motor menyala' },
+              { label: 'Kalibrasi pH (Offset)', key: 'phCalibrationOffset' as const, desc: 'Misal: 0.2 atau -0.5' },
             ].map(field => (
               <div key={field.key} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
                 <label className="text-xs font-bold text-muted-foreground mb-1 block uppercase tracking-wider">

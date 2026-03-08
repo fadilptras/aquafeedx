@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-// Tambahkan getApps dan getApp pada import
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
 
-// Konfigurasi Firebase 
+// Konfigurasi Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBYJKjXSNmu_WOCf8mAm_S5-Livw9hfblc",
   authDomain: "aquafeedx.firebaseapp.com",
@@ -15,7 +14,7 @@ const firebaseConfig = {
   appId: "1:20038083272:web:3459be9b982801333fbbfd",
 };
 
-// inisialisasi Firebase
+// Inisialisasi Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
 
@@ -26,8 +25,8 @@ export interface SettingsConfig {
   poolVolume: number | string;
   feedCapacity: number | string;
   installDate: string;
-  tempMin: number | string;
-  tempMax: number | string;
+  feedDuration: number | string;      // Durasi motor pakan menyala (detik)
+  phCalibrationOffset: number | string; // Nilai offset untuk kalibrasi pH digital
   phMin: number | string;
   phMax: number | string;
 }
@@ -39,10 +38,10 @@ const defaultConfig: SettingsConfig = {
   poolVolume: 0,
   feedCapacity: 0,
   installDate: '',
-  tempMin: 0,
-  tempMax: 0,
-  phMin: 0,
-  phMax: 0,
+  feedDuration: 5,           // Default 5 detik
+  phCalibrationOffset: 0,    // Default 0 (tidak ada offset)
+  phMin: 6.5,
+  phMax: 8.0,
 };
 
 export function useSettings() {
@@ -57,7 +56,6 @@ export function useSettings() {
     const unsubscribe = onValue(settingsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // PERBAIKAN: Gabungkan data dari DB dengan defaultConfig agar tidak ada variabel undefined
         setConfig({ ...defaultConfig, ...data });
       } else {
         console.warn("Data pengaturan belum ada di database Firebase");
@@ -70,7 +68,6 @@ export function useSettings() {
       setIsLoading(false);
     });
 
-    // Cleanup listener saat komponen di-unmount
     return () => unsubscribe();
   }, []);
 
@@ -87,24 +84,22 @@ export function useSettings() {
         ...config,
         poolVolume: Number(config.poolVolume) || 0,
         feedCapacity: Number(config.feedCapacity) || 0,
-        tempMin: Number(config.tempMin) || 0,
-        tempMax: Number(config.tempMax) || 0,
+        feedDuration: Number(config.feedDuration) || 0,
+        phCalibrationOffset: Number(config.phCalibrationOffset) || 0,
         phMin: Number(config.phMin) || 0,
         phMax: Number(config.phMax) || 0,
       };
 
-      // Simpan langsung ke node 'settings'
       await set(ref(db, 'settings'), payload);
 
       console.log("Data berhasil disimpan!");
-      // Trigger notifikasi sukses di UI
       setShowSuccess(true);
       toast.success("Pengaturan berhasil disimpan");
       setTimeout(() => setShowSuccess(false), 3000); 
     } catch (error: any) {
       console.error("Gagal koneksi ke Firebase:", error);
       toast.error("Gagal menyimpan: Akses Ditolak");
-      alert("Gagal menyimpan data ke Firebase! Pastikan 'Rules' di Firebase Realtime Database sudah diset ke true untuk .read dan .write.");
+      alert("Gagal menyimpan data ke Firebase! Pastikan 'Rules' sudah diset ke true.");
     }
   };
 
