@@ -1,4 +1,23 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+// Tambahkan getApps dan getApp pada import
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getDatabase, ref, onValue, set } from "firebase/database";
+
+// Konfigurasi Firebase 
+const firebaseConfig = {
+  apiKey: "AIzaSyBYJKjXSNmu_WOCf8mAm_S5-Livw9hfblc",
+  authDomain: "aquafeedx.firebaseapp.com",
+  databaseURL: "https://aquafeedx-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "aquafeedx",
+  storageBucket: "aquafeedx.firebasestorage.app",
+  messagingSenderId: "20038083272",
+  appId: "1:20038083272:web:3459be9b982801333fbbfd",
+};
+
+// inisialisasi Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getDatabase(app);
 
 export interface SettingsConfig {
   deviceName: string;
@@ -31,26 +50,28 @@ export function useSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // ambil data dr db (port 3004)
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch("http://localhost:3004/api/settings");
-      if (response.ok) {
-        const data = await response.json();
-        setConfig(data);
-      } else {
-        console.warn("Data pengaturan belum ada di database (404)");
-      }
-    } catch (error) {
-      console.error("Gagal mengambil pengaturan dari database:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Muat data saat halaman pertama kali dibuka
+  // Ambil data dari Firebase secara Real-time
   useEffect(() => {
-    fetchSettings();
+    const settingsRef = ref(db, 'settings');
+    
+    const unsubscribe = onValue(settingsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // PERBAIKAN: Gabungkan data dari DB dengan defaultConfig agar tidak ada variabel undefined
+        setConfig({ ...defaultConfig, ...data });
+      } else {
+        console.warn("Data pengaturan belum ada di database Firebase");
+        setConfig(defaultConfig);
+      }
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Gagal mengambil pengaturan dari Firebase:", error);
+      toast.error("Gagal terhubung ke database");
+      setIsLoading(false);
+    });
+
+    // Cleanup listener saat komponen di-unmount
+    return () => unsubscribe();
   }, []);
 
   // Fungsi untuk update state lokal sebelum disimpan
@@ -58,9 +79,10 @@ export function useSettings() {
     setConfig(prev => ({ ...prev, [key]: value }));
   };
 
-  // save
+  // Simpan data ke Firebase
   const saveSettings = async () => {
     try {
+      console.log("Mencoba menyimpan data ke Firebase...");
       const payload = {
         ...config,
         poolVolume: Number(config.poolVolume) || 0,
@@ -71,29 +93,22 @@ export function useSettings() {
         phMax: Number(config.phMax) || 0,
       };
 
-      const response = await fetch("http://localhost:3004/api/settings", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
-        body: JSON.stringify(payload)
-      });
+      // Simpan langsung ke node 'settings'
+      await set(ref(db, 'settings'), payload);
 
-      if (response.ok) {
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000); // notif muncul 3 detik
-      } else {
-        const err = await response.json();
-        console.error("Backend Error:", err);
-        alert("Gagal menyimpan ke database.");
-      }
-    } catch (error) {
-      console.error("Gagal koneksi ke API:", error);
-      alert("Terjadi kesalahan koneksi ke server.");
+      console.log("Data berhasil disimpan!");
+      // Trigger notifikasi sukses di UI
+      setShowSuccess(true);
+      toast.success("Pengaturan berhasil disimpan");
+      setTimeout(() => setShowSuccess(false), 3000); 
+    } catch (error: any) {
+      console.error("Gagal koneksi ke Firebase:", error);
+      toast.error("Gagal menyimpan: Akses Ditolak");
+      alert("Gagal menyimpan data ke Firebase! Pastikan 'Rules' di Firebase Realtime Database sudah diset ke true untuk .read dan .write.");
     }
   };
 
-  // reset
+  // Reset form ke nilai awal
   const handleReset = () => {
     if (window.confirm('Apakah Anda yakin ingin mengosongkan semua isian form?')) {
       setConfig(defaultConfig);

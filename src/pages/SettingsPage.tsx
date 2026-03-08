@@ -56,7 +56,7 @@ export default function SettingsPage() {
               <input
                 aria-label="Nama Perangkat"
                 title="Masukkan Nama Perangkat"
-                value={config.deviceName}
+                value={config.deviceName || ''}
                 onChange={e => updateConfig('deviceName', e.target.value)}
                 placeholder="Contoh: AquaFeedX-01"
                 className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-medium transition-all"
@@ -70,7 +70,7 @@ export default function SettingsPage() {
               <input
                 aria-label="Lokasi Kolam"
                 title="Masukkan Lokasi Kolam"
-                value={config.poolLocation}
+                value={config.poolLocation || ''}
                 onChange={e => updateConfig('poolLocation', e.target.value)}
                 placeholder="Contoh: Desa Sukamaju"
                 className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-medium transition-all"
@@ -84,7 +84,7 @@ export default function SettingsPage() {
               <input
                 aria-label="Jenis Ikan"
                 title="Masukkan Jenis Ikan"
-                value={config.fishType}
+                value={config.fishType || ''}
                 onChange={e => updateConfig('fishType', e.target.value)}
                 placeholder="Contoh: Nila Merah"
                 className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-medium transition-all"
@@ -99,7 +99,7 @@ export default function SettingsPage() {
                 aria-label="Volume Kolam"
                 title="Masukkan Volume Kolam"
                 type="number"
-                value={config.poolVolume}
+                value={config.poolVolume || ''}
                 onChange={e => updateConfig('poolVolume', e.target.value)}
                 placeholder="Contoh: 15"
                 className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-medium transition-all"
@@ -114,7 +114,7 @@ export default function SettingsPage() {
                 aria-label="Kapasitas Wadah Pakan"
                 title="Masukkan Kapasitas Wadah Pakan"
                 type="number"
-                value={config.feedCapacity}
+                value={config.feedCapacity || ''}
                 onChange={e => updateConfig('feedCapacity', e.target.value)}
                 placeholder="Contoh: 5"
                 className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-medium transition-all"
@@ -129,7 +129,7 @@ export default function SettingsPage() {
                 aria-label="Tanggal Pemasangan"
                 title="Masukkan Tanggal Pemasangan"
                 type="date"
-                value={config.installDate}
+                value={config.installDate || ''}
                 onChange={e => updateConfig('installDate', e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-medium transition-all"
               />
@@ -163,7 +163,7 @@ export default function SettingsPage() {
                   title={`Masukkan ${field.label}`}
                   type="number"
                   step={0.1}
-                  value={config[field.key]}
+                  value={config[field.key] || ''}
                   onChange={e => updateConfig(field.key, e.target.value)}
                   className="w-full px-3 py-2 mt-1 rounded-lg bg-background text-foreground border border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-lg font-mono font-bold transition-all"
                 />
@@ -177,7 +177,8 @@ export default function SettingsPage() {
 
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 fade-up fade-up-delay-3 pt-4">
         <button
-          onClick={handleReset}
+          type="button"
+          onClick={() => handleReset()}
           title="Kosongkan Form"
           className="flex items-center justify-center px-6 py-3.5 rounded-xl bg-secondary text-muted-foreground font-bold text-sm hover:bg-destructive hover:text-destructive-foreground transition-all ripple-btn border border-border w-full sm:w-auto"
         >
@@ -185,7 +186,8 @@ export default function SettingsPage() {
           <span className="sm:hidden ml-2">Kosongkan Form</span>
         </button>
         <button
-          onClick={saveSettings}
+          type="button"
+          onClick={() => saveSettings()}
           title="Simpan Pengaturan"
           className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-sm transition-all ripple-btn glow-hover bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 uppercase tracking-widest w-full sm:w-auto"
         >

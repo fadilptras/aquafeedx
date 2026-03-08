@@ -1,95 +1,112 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getDatabase, ref, onValue, set } from "firebase/database";
 
-export interface ScheduleItem {
-  id?: number;
-  name?: string;
+// firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyBYJKjXSNmu_WOCf8mAm_S5-Livw9hfblc",
+  authDomain: "aquafeedx.firebaseapp.com",
+  databaseURL: "https://aquafeedx-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "aquafeedx",
+  storageBucket: "aquafeedx.firebasestorage.app",
+  messagingSenderId: "20038083272",
+  appId: "1:20038083272:web:3459be9b982801333fbbfd",
+  measurementId: "G-JL6E6NRS60"
+};
+
+// Inisialisasi Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const analytics = getAnalytics(app);
+const db = getDatabase(app);
+
+export interface FeedingSchedule {
+  id: number;
   time: string;
-  isActive?: boolean;
+  name: string;
+  isActive: boolean;
 }
 
-export function useFeedingSettings() {
-  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
-  const [showSuccess, setShowSuccess] = useState(false);
+export const useFeedingSettings = () => {
+  const [schedules, setSchedules] = useState<FeedingSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // db
-  const fetchSchedules = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/api/schedules");
-      if (response.ok) {
-        const data = await response.json();
-        setSchedules(data || []);
+  // Mengambil data secara real-time dari Firebase
+  useEffect(() => {
+    const schedulesRef = ref(db, 'schedules');
+    
+    const unsubscribe = onValue(schedulesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Firebase menyimpan array atau objek, kita pastikan formatnya array
+        const formattedData = Array.isArray(data) ? data : Object.values(data);
+        setSchedules(formattedData as FeedingSchedule[]);
+      } else {
+        setSchedules([]);
       }
+      setIsLoading(false);
+    }, (error) => {
+      console.error(error);
+      toast.error("Gagal memuat jadwal dari Firebase");
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fungsi untuk sinkronisasi ke Firebase (didefinisikan di atas agar bisa dipanggil fungsi lain)
+  const syncSchedules = async (data: FeedingSchedule[]) => {
+    try {
+      setIsLoading(true);
+      await set(ref(db, 'schedules'), data);
+      toast.success("Jadwal berhasil diperbarui");
     } catch (error) {
-      console.error("Gagal mengambil jadwal dari database:", error);
+      console.error(error);
+      toast.error("Gagal menyinkronkan ke Firebase");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Ambil data saat komponen pertama kali dimuat
-  useEffect(() => {
-    fetchSchedules();
-  }, []);
-
-  const addTime = () => {
-    setSchedules(prev => [...prev, { time: "08:00" }]);
+  const addSchedule = () => {
+    const newId = schedules.length > 0 ? Math.max(...schedules.map(s => s.id)) + 1 : 1;
+    const newSchedule: FeedingSchedule = {
+      id: newId,
+      time: "08:00",
+      name: `Jadwal ${newId}`,
+      isActive: true,
+    };
+    const updatedSchedules = [...schedules, newSchedule];
+    syncSchedules(updatedSchedules);
   };
 
-  const removeTime = (index: number) => {
-    setSchedules(prev => prev.filter((_, i) => i !== index));
+  const updateSchedule = (id: number, updates: Partial<FeedingSchedule>) => {
+    const updatedSchedules = schedules.map((s) => 
+      s.id === id ? { ...s, ...updates } : s
+    );
+    setSchedules(updatedSchedules);
   };
 
-  const handleTimeChange = (index: number, value: string) => {
-    setSchedules(prev => {
-      const newSchedules = [...prev];
-      newSchedules[index].time = value;
-      return newSchedules;
-    });
+  const removeSchedule = (id: number) => {
+    const updatedSchedules = schedules.filter((s) => s.id !== id);
+    syncSchedules(updatedSchedules);
   };
 
-  const saveSettings = async () => {
-    try {
-      // Format data array of objects untuk dikirim ke endpoint sync
-      const payload = schedules.map(s => ({
-        name: "Jadwal Pakan Aktif",
-        time: s.time,
-        isActive: true
-      }));
-
-      // Kirim ke endpoint sync yang akan menghapus data lama dan mereplace dengan data baru ini
-      const response = await fetch("http://localhost:3000/api/schedules/sync", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        setShowSuccess(true);
-        
-        await fetchSchedules();
-        
-        setTimeout(() => setShowSuccess(false), 3000);
-      } else {
-        const err = await response.json();
-        console.error("Backend Error:", err);
-        alert("Gagal menyimpan ke database. Cek format data.");
-      }
-    } catch (error) {
-      console.error("Gagal koneksi ke API:", error);
-      alert("Terjadi kesalahan koneksi ke server.");
-    }
+  const toggleSchedule = (id: number) => {
+    const updatedSchedules = schedules.map((s) => 
+      s.id === id ? { ...s, isActive: !s.isActive } : s
+    );
+    syncSchedules(updatedSchedules);
   };
 
-  return { 
-    schedules, 
-    addTime, 
-    removeTime, 
-    handleTimeChange, 
-    saveSettings, 
-    showSuccess, 
-    isLoading 
+  return {
+    schedules,
+    isLoading,
+    addSchedule,
+    updateSchedule,
+    removeSchedule,
+    toggleSchedule,
+    syncSchedules: () => syncSchedules(schedules),
   };
-}
+};

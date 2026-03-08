@@ -1,8 +1,15 @@
-import { Clock, Save, Trash2, Plus, Check, Utensils, Loader2 } from 'lucide-react';
+import { Clock, Save, Trash2, Plus, Utensils, Loader2 } from 'lucide-react';
 import { useFeedingSettings } from '@/hooks/useFeedingSettings';
 
 export default function FeedingControl() {
-  const { schedules, addTime, removeTime, handleTimeChange, saveSettings, showSuccess, isLoading } = useFeedingSettings();
+  const { 
+    schedules, 
+    addSchedule, 
+    removeSchedule, 
+    updateSchedule, 
+    syncSchedules, 
+    isLoading 
+  } = useFeedingSettings();
 
   if (isLoading) {
     return (
@@ -15,18 +22,6 @@ export default function FeedingControl() {
 
   return (
     <div className="space-y-6">
-      {showSuccess && (
-        <div className="fixed top-4 right-4 z-50 glass-card rounded-xl p-4 flex items-center gap-3 border border-success/30 animate-fade-up">
-          <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
-            <Check className="w-4 h-4 text-success" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Berhasil Disimpan!</p>
-            <p className="text-xs text-muted-foreground">Jadwal telah sinkron ke database</p>
-          </div>
-        </div>
-      )}
-
       <div className="fade-up">
         <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Kontrol Pakan</h1>
         <p className="text-sm text-muted-foreground mt-1">Kelola waktu pemberian pakan otomatis</p>
@@ -44,7 +39,7 @@ export default function FeedingControl() {
             </div>
           </div>
           <button 
-            onClick={addTime}
+            onClick={addSchedule}
             title="Tambah Waktu"
             className="flex items-center justify-center gap-2 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground px-5 py-2.5 rounded-xl transition-all border border-border"
           >
@@ -61,7 +56,7 @@ export default function FeedingControl() {
           ) : (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {schedules.map((schedule, index) => (
-                <div key={index} className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/40 border border-border/50 hover:border-primary/40 transition-all">
+                <div key={schedule.id} className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/40 border border-border/50 hover:border-primary/40 transition-all">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary text-xs font-black">
                     {index + 1}
                   </div>
@@ -70,11 +65,11 @@ export default function FeedingControl() {
                     aria-label={`Waktu Pakan ${index + 1}`}
                     title="Ubah Jam Pakan"
                     value={schedule.time}
-                    onChange={(e) => handleTimeChange(index, e.target.value)}
+                    onChange={(e) => updateSchedule(schedule.id, { time: e.target.value })}
                     className="flex-1 bg-transparent text-foreground outline-none font-mono text-lg font-bold focus:text-primary transition-colors"
                   />
                   <button 
-                    onClick={() => removeTime(index)}
+                    onClick={() => removeSchedule(schedule.id)}
                     aria-label="Hapus Waktu"
                     title="Hapus Waktu"
                     className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
@@ -90,7 +85,7 @@ export default function FeedingControl() {
 
       <div className="fade-up fade-up-delay-2">
         <button
-          onClick={saveSettings}
+          onClick={syncSchedules}
           title="Simpan & Perbarui Jadwal"
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-sm transition-all ripple-btn glow-hover bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 uppercase tracking-widest"
         >

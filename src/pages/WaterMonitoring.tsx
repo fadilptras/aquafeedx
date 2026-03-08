@@ -14,30 +14,30 @@ const statusColors = {
   good: "bg-success text-success",
   warning: "bg-warning text-warning",
   danger: "bg-destructive text-destructive",
+  cold: "bg-sky-500/20 text-sky-500", // Menambahkan warna biru untuk status Dingin
 };
 
 export default function WaterMonitoring() {
   const { data, history } = useSensorData(2000);
-  const { config } = useSettings(); // Memanggil batas optimal dari settings
+  const { config } = useSettings();
 
-  // Memasukkan array ini ke dalam komponen agar bisa membaca config secara reaktif
   const chartConfig = [
-    {
-      key: "temperature",
-      label: "Suhu Air (°C)",
-      color: "hsl(185, 72%, 48%)",
-      range: `${config.tempMin}–${config.tempMax}°C`,
-    },
     { 
       key: "ph", 
       label: "pH Air", 
       color: "hsl(210, 90%, 55%)", 
       range: `${config.phMin}–${config.phMax}` 
     },
+    {
+      key: "temperature",
+      label: "Suhu Lokasi (°C)",
+      color: "hsl(185, 72%, 48%)",
+      range: null,
+    },
   ];
 
   const currentValues = [
-    { type: "temperature", label: "Suhu Air", value: data.temperature, unit: "°C", min: config.tempMin, max: config.tempMax },
+    { type: "temperature", label: "Suhu Lokasi", value: data.temperature, unit: "°C", min: 0, max: 0 },
     { type: "ph", label: "pH Air", value: data.ph, unit: "", min: config.phMin, max: config.phMax },
   ];
 
@@ -55,8 +55,13 @@ export default function WaterMonitoring() {
       {/* Status indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 fade-up fade-up-delay-1">
         {currentValues.map((item) => {
-          // Fungsi getSensorStatus kini dipanggil dengan membawa batas min dan max-nya
           const status = getSensorStatus(item.type, item.value, Number(item.min), Number(item.max));
+          
+          // Mendapatkan gaya warna berdasarkan tema yang dikembalikan
+          const themeClass = statusColors[status.theme as keyof typeof statusColors];
+          const bgClass = themeClass.split(" ")[0];
+          const textClass = themeClass.split(" ")[1];
+
           return (
             <div
               key={item.type}
@@ -75,16 +80,16 @@ export default function WaterMonitoring() {
               </div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`w-3 h-3 rounded-full ${statusColors[status].split(" ")[0]}/30 flex items-center justify-center`}
+                  className={`w-3 h-3 rounded-full ${bgClass}/30 flex items-center justify-center`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${statusColors[status].split(" ")[0]} status-pulse`}
+                    className={`w-2 h-2 rounded-full ${bgClass} status-pulse`}
                   />
                 </span>
                 <span
-                  className={`text-xs font-medium capitalize ${statusColors[status].split(" ")[1]}`}
+                  className={`text-xs font-bold uppercase tracking-wider ${textClass}`}
                 >
-                  {status}
+                  {status.label}
                 </span>
               </div>
             </div>
@@ -102,9 +107,11 @@ export default function WaterMonitoring() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-semibold text-foreground">{chart.label}</h3>
-                <p className="text-xs text-muted-foreground">
-                  Rentang optimal: {chart.range}
-                </p>
+                {chart.range && (
+                  <p className="text-xs text-muted-foreground">
+                    Rentang optimal: {chart.range}
+                  </p>
+                )}
               </div>
             </div>
             <div className="h-48">

@@ -12,22 +12,12 @@ import { useSensorData, getSensorStatus } from "@/hooks/useSensorData";
 import { useSettings } from "@/hooks/useSettings";
 import { useFeedingSettings } from "@/hooks/useFeedingSettings";
 
-const statusColors = {
-  good: "text-success",
-  warning: "text-warning",
-  danger: "text-destructive",
-};
-
-const statusBg = {
-  good: "bg-success/10",
-  warning: "bg-warning/10",
-  danger: "bg-destructive/10",
-};
-
-const statusLabels = {
-  good: "Aman",
-  warning: "Peringatan",
-  danger: "Bahaya",
+// Menggabungkan konfigurasi warna agar lebih rapi dan mendukung tema 'cold' (dingin)
+const statusStyles = {
+  good: { text: "text-success", bg: "bg-success/10", dot: "bg-success" },
+  warning: { text: "text-warning", bg: "bg-warning/10", dot: "bg-warning" },
+  danger: { text: "text-destructive", bg: "bg-destructive/10", dot: "bg-destructive" },
+  cold: { text: "text-sky-500", bg: "bg-sky-500/10", dot: "bg-sky-500" },
 };
 
 function formatCountdown(seconds: number) {
@@ -41,14 +31,12 @@ function formatCountdown(seconds: number) {
 export default function Dashboard() {
   const { data } = useSensorData();
   const { config } = useSettings();
-  const { schedules } = useFeedingSettings(); // Memanggil 'schedules' sesuai dengan hook terbaru
+  const { schedules } = useFeedingSettings();
 
-  // State lokal untuk menghitung jadwal terdekat
   const [nextFeedingTime, setNextFeedingTime] = useState("-");
   const [countdown, setCountdown] = useState(0);
   const [isFeeding, setIsFeeding] = useState(false);
 
-  // Logika untuk menghitung countdown dan status motor pakan
   useEffect(() => {
     if (!schedules || schedules.length === 0) {
       setNextFeedingTime("Belum ada");
@@ -64,7 +52,6 @@ export default function Dashboard() {
       const currentSeconds = now.getSeconds();
       const currentTotalSeconds = currentHours * 3600 + currentMinutes * 60 + currentSeconds;
 
-      // Ambil nilai "time" dari array of object schedules, lalu urutkan
       const sortedTimes = schedules.map(s => s.time).sort();
       
       let nextTotalSeconds = Infinity;
@@ -73,17 +60,15 @@ export default function Dashboard() {
       let foundNext = false;
 
       for (const t of sortedTimes) {
-        if (!t) continue; // Skip jika data time kosong
+        if (!t) continue;
         
         const [h, m] = t.split(":").map(Number);
         const timeTotalSeconds = h * 3600 + m * 60;
 
-        // Cek apakah saat ini sedang dalam menit jadwal pakan (Status Motor Aktif)
         if (h === currentHours && m === currentMinutes) {
           currentlyFeeding = true;
         }
 
-        // Cari jadwal terdekat selanjutnya di hari yang sama
         if (timeTotalSeconds > currentTotalSeconds && !foundNext) {
           nextTotalSeconds = timeTotalSeconds;
           nextStr = t;
@@ -91,10 +76,9 @@ export default function Dashboard() {
         }
       }
 
-      // Jika semua jadwal hari ini sudah terlewat, ambil jadwal pertama untuk besok hari
       if (!foundNext && sortedTimes.length > 0) {
         const [h, m] = sortedTimes[0].split(":").map(Number);
-        nextTotalSeconds = (h * 3600 + m * 60) + 24 * 3600; // Tambah 24 Jam
+        nextTotalSeconds = (h * 3600 + m * 60) + 24 * 3600; 
         nextStr = sortedTimes[0];
       }
 
@@ -103,19 +87,19 @@ export default function Dashboard() {
       setCountdown(nextTotalSeconds - currentTotalSeconds);
     };
 
-    updateTimer(); // Panggil sekali saat render
-    const timerId = setInterval(updateTimer, 1000); // Update setiap detik
+    updateTimer(); 
+    const timerId = setInterval(updateTimer, 1000); 
 
     return () => clearInterval(timerId);
   }, [schedules]);
 
   const cards = [
     {
-      label: "Suhu Air",
+      label: "Suhu Lokasi",
       value: `${data.temperature}°C`,
       icon: Thermometer,
-      status: getSensorStatus("temperature", data.temperature, Number(config.tempMin) || 0, Number(config.tempMax) || 0),
-      range: `${config.tempMin}–${config.tempMax}°C optimal`,
+      status: getSensorStatus("temperature", data.temperature, 0, 0),
+      range: "Suhu aktual lokasi",
     },
     {
       label: "pH Air",
@@ -128,15 +112,16 @@ export default function Dashboard() {
       label: "Status Pakan",
       value: isFeeding ? "Aktif" : "Standby",
       icon: Utensils,
-      status: isFeeding ? ("good" as const) : ("warning" as const),
+      // Kita buat objek status manual untuk pakan agar selaras dengan output getSensorStatus
+      status: { label: isFeeding ? "Berjalan" : "Menunggu", theme: isFeeding ? "good" : "warning" },
       range: isFeeding ? "Motor pakan menyala" : "Menunggu jadwal",
     },
     {
       label: "Jadwal Terdekat",
       value: schedules && schedules.length > 0 ? formatCountdown(countdown) : "--:--:--",
       icon: Clock,
-      status: schedules && schedules.length > 0 ? ("good" as const) : ("warning" as const),
-      range: schedules && schedules.length > 0 ? `Jam : ${nextFeedingTime} WIB` : "Jadwal kosong",
+      status: { label: schedules && schedules.length > 0 ? "Tersedia" : "Kosong", theme: schedules && schedules.length > 0 ? "good" : "warning" },
+      range: schedules && schedules.length > 0 ? `Jam : ${nextFeedingTime} WIB` : "Jadwal belum diatur",
     },
   ];
 
@@ -180,6 +165,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cards.map((card, i) => {
           const Icon = card.icon;
+          const themeClass = statusStyles[card.status.theme as keyof typeof statusStyles] || statusStyles.good;
+
           return (
             <div
               key={card.label}
@@ -195,12 +182,12 @@ export default function Dashboard() {
 
                 <div className="flex items-center gap-2">
                   <div
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${statusBg[card.status]} ${statusColors[card.status]}`}
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${themeClass.bg} ${themeClass.text}`}
                   >
                     <span
-                      className={`w-1 h-1 rounded-full ${card.status === "good" ? "bg-success" : card.status === "warning" ? "bg-warning" : "bg-destructive"} animate-pulse`}
+                      className={`w-1 h-1 rounded-full ${themeClass.dot} animate-pulse`}
                     />
-                    {statusLabels[card.status]}
+                    {card.status.label}
                   </div>
                   <span className="text-[10px] text-muted-foreground/60 font-medium">
                     {card.range}
