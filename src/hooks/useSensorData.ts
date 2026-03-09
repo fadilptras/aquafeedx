@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getDatabase, ref, onValue } from "firebase/database";
+import { getDatabase, ref, onValue, push, query, limitToLast, serverTimestamp } from "firebase/database"; // Tambahkan push, query, limitToLast, serverTimestamp
 
 // Konfigurasi Firebase
 const firebaseConfig = {
@@ -13,7 +13,6 @@ const firebaseConfig = {
   appId: "1:20038083272:web:3459be9b982801333fbbfd",
 };
 
-// Mencegah inisialisasi ganda Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
 
@@ -32,7 +31,6 @@ export type SensorStatus = {
 
 export function getSensorStatus(type: string, value: number, min: number, max: number): SensorStatus {
   if (type === 'temperature') {
-    // Batas suhu bisa disesuaikan. Contoh optimal: 25°C - 30°C
     if (value < 25) return { label: 'Dingin', theme: 'cold' };
     if (value > 30) return { label: 'Panas', theme: 'danger' };
     return { label: 'Normal', theme: 'good' };
@@ -40,7 +38,6 @@ export function getSensorStatus(type: string, value: number, min: number, max: n
 
   if (type === 'ph') {
     if (min === 0 && max === 0) return { label: 'Normal', theme: 'good' };
-
     const tolerance = 0.5; 
     
     if (value >= min && value <= max) return { label: 'Normal', theme: 'good' };
@@ -53,7 +50,8 @@ export function getSensorStatus(type: string, value: number, min: number, max: n
   return { label: 'Normal', theme: 'good' };
 }
 
-export function useSensorData(historyInterval = 3000) {
+// Hapus historyInterval dari parameter karena sekarang kita menggunakan Firebase permanen
+export function useSensorData() {
   const [data, setData] = useState<SensorData>({
     temperature: 0,
     ph: 0,
@@ -65,9 +63,8 @@ export function useSensorData(historyInterval = 3000) {
   const [history, setHistory] = useState<{ time: string; temperature: number; ph: number }[]>([]);
   
   const latestData = useRef(data);
-  const locationRef = useRef("Bogor"); // Default lokasi jika belum diatur
+  const locationRef = useRef("Bogor");
 
-  // Fungsi mengambil data suhu aktual berdasarkan nama lokasi
   const fetchTemperature = async () => {
     try {
       const locName = locationRef.current;
@@ -126,31 +123,49 @@ export function useSensorData(historyInterval = 3000) {
       }
     });
 
+    // AMBIL RIWAYAT GRAFIK DARI FIREBASE (Ambil 24 data terakhir = 24 Jam)
+    const historyRef = query(ref(db, 'sensor_history'), limitToLast(24));
+    const unsubHistory = onValue(historyRef, (snapshot) => {
+      const formattedHistory: { time: string; temperature: number; ph: number }[] = [];
+      snapshot.forEach((childSnapshot) => {
+        const item = childSnapshot.val();
+        // Fallback Date.now() mencegah error waktu belum di-sync server Firebase
+        const timestamp = item.timestamp || Date.now();
+        const date = new Date(timestamp);
+        
+        formattedHistory.push({
+          time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          temperature: item.temperature,
+          ph: item.ph
+        });
+      });
+      setHistory(formattedHistory);
+    });
+
     fetchTemperature();
     const weatherInterval = setInterval(fetchTemperature, 5 * 60 * 1000);
 
+    // SIMPAN RIWAYAT KE FIREBASE OTOMATIS SETIAP 1 JAM
+    const ONE_HOUR = 60 * 60 * 1000;
     const recordInterval = setInterval(() => {
-      setHistory(prev => {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        
-        const newEntry = {
-          time: timeStr,
+      // Pastikan data bukan 0 / sudah diload sebelum menyimpan ke DB
+      if (latestData.current.ph > 0 && latestData.current.temperature > 0) {
+        push(ref(db, 'sensor_history'), {
           temperature: latestData.current.temperature,
           ph: latestData.current.ph,
-        };
-        
-        return [...prev, newEntry].slice(-30); 
-      });
-    }, historyInterval);
+          timestamp: serverTimestamp() // Menggunakan standar jam server Firebase
+        });
+      }
+    }, ONE_HOUR);
 
     return () => {
       unsubSettings();
-      unsubSensor(); 
+      unsubSensor();
+      unsubHistory();
       clearInterval(weatherInterval);
       clearInterval(recordInterval);
     };
-  }, [historyInterval]);
+  }, []);
 
   return { data, history };
 }

@@ -18,7 +18,7 @@ const statusColors = {
 };
 
 export default function WaterMonitoring() {
-  const { data, history } = useSensorData(2000);
+  const { data, history } = useSensorData();
   const { config } = useSettings();
 
   const chartConfig = [
