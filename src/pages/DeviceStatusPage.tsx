@@ -1,57 +1,64 @@
-import { Wifi, WifiOff, Cpu, Zap, Clock, Signal } from 'lucide-react';
+import { Wifi, WifiOff, Cpu, Signal, Database, Activity, Plug } from 'lucide-react';
 import { useDeviceStatus } from '@/hooks/useDeviceStatus';
 
-// Fungsi untuk memformat waktu aktif perangkat
-function formatUptime(seconds: number) {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${d}hari ${h}jam ${m}menit`;
+// Fungsi bantuan untuk menilai kualitas sinyal RSSI
+function getSignalQuality(rssi: number) {
+  if (rssi >= -50) return 'Sangat Kuat';
+  if (rssi >= -70) return 'Bagus';
+  if (rssi >= -80) return 'Lemah';
+  return 'Sangat Lemah';
 }
 
 export default function DeviceStatusPage() {
   const device = useDeviceStatus();
 
-  // Baris pertama: 3 Kolom
+  // Baris pertama: 3 Kolom (Konektivitas ESP32 & WiFi)
   const row1Items = [
     {
       label: 'Koneksi ESP32',
-      value: device.esp32Connected ? 'Terhubung' : 'Terputus',
+      value: device.isOnline ? 'Terhubung' : 'Terputus',
       icon: Cpu,
-      status: device.esp32Connected,
-      detail: 'ESP32-WROOM-32D',
+      status: device.isOnline,
+      detail: 'Sistem Kontrol Utama',
     },
     {
-      label: 'Koneksi Listrik',
-      value: device.powerConnected ? 'Terhubung' : 'Terputus',
-      icon: Zap,
-      status: device.powerConnected,
-      detail: device.powerConnected ? 'Catu daya stabil' : 'Cek adaptor listrik',
+      label: 'Kekuatan Sinyal (RSSI)',
+      value: device.isOnline ? `${device.wifiRSSI} dBm` : '-',
+      icon: Signal,
+      status: device.isOnline && device.wifiRSSI >= -80, // Kuning/Merah jika lemah
+      detail: device.isOnline ? getSignalQuality(device.wifiRSSI) : 'Perangkat Offline',
     },
     {
-      label: 'Status WiFi',
-      value: device.wifiConnected ? device.wifiSSID : 'Tidak Terhubung',
-      icon: device.wifiConnected ? Wifi : WifiOff,
-      status: device.wifiConnected,
-      detail: device.wifiConnected ? 'Sinyal: Kuat' : 'Periksa router',
+      label: 'Jaringan WiFi',
+      value: device.isOnline ? device.wifiSSID : 'Tidak Terhubung',
+      icon: device.isOnline ? Wifi : WifiOff,
+      status: device.isOnline,
+      detail: device.isOnline ? 'Terhubung ke router' : 'Periksa jaringan',
     },
   ];
 
-  // Baris kedua: 2 Kolom
+  // Baris kedua: 3 Kolom (Database, Sensor pH Statis, Listrik Statis)
   const row2Items = [
     {
-      label: 'Waktu Aktif Sistem',
-      value: formatUptime(device.uptime),
-      icon: Signal,
-      status: true,
-      detail: 'Berjalan tanpa gangguan',
+      label: 'Koneksi Database',
+      value: device.isDbConnected ? 'Terhubung' : 'Terputus',
+      icon: Database,
+      status: device.isDbConnected,
+      detail: device.isDbConnected ? 'Firebase Real-time aktif' : 'Gagal sinkronisasi',
     },
     {
-      label: 'Data Terakhir Diterima',
-      value: device.lastDataReceived.toLocaleTimeString('id-ID'),
-      icon: Clock,
-      status: true,
-      detail: 'Aliran data aktif',
+      label: 'Sensor pH Air',
+      value: 'Aktif',
+      icon: Activity,
+      status: true, // Default Nyala
+      detail: 'Membaca kadar asam/basa',
+    },
+    {
+      label: 'Daya Listrik',
+      value: 'Terhubung',
+      icon: Plug,
+      status: true, // Default Terhubung
+      detail: 'Arus listrik',
     },
   ];
 
@@ -61,28 +68,30 @@ export default function DeviceStatusPage() {
       <div className="fade-up flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Status Perangkat</h1>
-          <p className="text-sm text-muted-foreground mt-1">Informasi teknis sistem AquaFeedX Anda</p>
+          <p className="text-sm text-muted-foreground mt-1">Informasi teknis dan kondisi komponen alat</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sistem:</span>
-          <span className="text-xs font-bold text-success uppercase">Stabil</span>
-          <span className={`w-2 h-2 rounded-full bg-success animate-pulse`} />
+          <span className={`text-xs font-bold uppercase ${device.isOnline && device.isDbConnected ? 'text-success' : 'text-destructive'}`}>
+            {device.isOnline && device.isDbConnected ? 'Stabil' : 'Gangguan'}
+          </span>
+          <span className={`w-2 h-2 rounded-full ${device.isOnline && device.isDbConnected ? 'bg-success animate-pulse' : 'bg-destructive'}`} />
         </div>
       </div>
 
       {/* Container Grid */}
       <div className="space-y-4">
-        {/* Baris Pertama: Grid 3 Kolom */}
+        {/* Baris Pertama: Grid 3 Kolom (ESP32 & WiFi) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {row1Items.map((item, i) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className={`glass-card rounded-xl p-5 fade-up fade-up-delay-${Math.min(i + 1, 5)}`}>
+              <div key={item.label} className={`glass-card rounded-xl p-5 fade-up fade-up-delay-${Math.min(i + 1, 3)}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="p-2 rounded-lg bg-primary/10">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
-                  <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} ${item.status && 'animate-pulse'}`} />
                 </div>
                 <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold tracking-tighter">{item.label}</p>
                 <p className="text-lg font-bold font-mono text-foreground">{item.value}</p>
@@ -92,17 +101,17 @@ export default function DeviceStatusPage() {
           })}
         </div>
 
-        {/* Baris Kedua: Grid 2 Kolom */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Baris Kedua: Grid 3 Kolom (Database, pH, Listrik) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {row2Items.map((item, i) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className={`glass-card rounded-xl p-5 fade-up fade-up-delay-${Math.min(i + 4, 5)}`}>
+              <div key={item.label} className={`glass-card rounded-xl p-5 fade-up fade-up-delay-${Math.min(i + 4, 6)}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="p-2 rounded-lg bg-primary/10">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
-                  <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ${item.status ? 'bg-success' : 'bg-destructive'} ${item.status && 'animate-pulse'}`} />
                 </div>
                 <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold tracking-tighter">{item.label}</p>
                 <p className="text-lg font-bold font-mono text-foreground">{item.value}</p>
@@ -112,16 +121,6 @@ export default function DeviceStatusPage() {
           })}
         </div>
       </div>
-
-      {/* Catatan Integrasi ESP32 */}
-      {/* <div className="glass-card rounded-xl p-4 border-l-4 border-primary fade-up fade-up-delay-5 bg-primary/5">
-        <p className="text-sm font-bold text-foreground flex items-center gap-2">
-          <span>🔧</span> Siap untuk Integrasi ESP32
-        </p>
-        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-          Sistem saat ini menggunakan data simulasi untuk keperluan demo UI. Hubungkan ESP32 Anda ke endpoint API lokal untuk melihat performa perangkat yang sebenarnya secara real-time.
-        </p>
-      </div> */}
     </div>
   );
 }
